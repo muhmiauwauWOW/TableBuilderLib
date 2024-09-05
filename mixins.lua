@@ -2,23 +2,35 @@ local _ = LibStub("LibLodash-1"):Get()
 
 
 
+
+local columnConfigDefault = {
+    Id = nil,
+    width = "fill",
+    headerText = "",
+    padding = 0,
+    template = nil,
+    sortable = false
+ }
+ 
+
+
+
 TableBuilderLibTableMixin = {}
 
 function TableBuilderLibTableMixin:OnLoad()
-    -- self:Init()
-end
-
-function TableBuilderLibTableMixin:Init()
-    
 
     self.headerTemplate = "TableBuilderLibTableHeaderTemplate"
     self.cellTemplate = "TableBuilderLibTableCellTemplate"
     self.rowTemplate = "TableBuilderLibTableLineTemplate"
 
-    self.data = self.data or {}
- 
-    self.headers = self.headers or {"1", "2", "3"}
-   
+    self.data = {}
+    self.columnsConfig = {}
+
+    -- self:Init()
+end
+
+function TableBuilderLibTableMixin:Init()
+    
  
     local tableBuilder = CreateTableBuilder(self.data);
     self.tableBuilder = tableBuilder;
@@ -37,27 +49,9 @@ function TableBuilderLibTableMixin:Init()
  
     self.tableBuilder:SetColumnHeaderOverlap(2);
     self.tableBuilder:SetHeaderContainer(self.HeaderContainer);
-    _.forEach(self.headers, function(colName, idx)
- --       local width = _.get(selself.columnConfig, {colName, "width"})
- --       local headerText = _.get(selself.columnConfig, {colName, "header", "text"})
- --       local padding = _.get(selself.columnConfig, {colName, "padding"}, 14)
- --       local template = _.get(selself.columnConfig, {colName, "template"}, "GreatVaultListTableCellTextTemplate")
- 
- -- 	local canSort = _.get(selself.columnConfig, {colName, "header", "canSort"}, false)
- -- 	if canSort then 
- -- 		table.insert(selself.sortHeaders, idx);
- -- 	end
- 
-       local width = 100
-       local headerText = "test"
-       local padding = "0"
-       local template = self.cellTemplate
- 
- 
-       local col = self:AddFixedWidthColumn(self, 0, width, padding, padding, idx, template);
-       if not col then end
-       col:GetHeaderFrame():SetText(self.headers[idx]);
-            
+
+    _.forEach(self.columnsConfig, function(columnConfigObj, idx)
+        self:AddColumn(columnConfigObj, true)
     end)
  
  
@@ -71,7 +65,7 @@ function TableBuilderLibTableMixin:Init()
     ScrollUtil.InitScrollBoxListWithScrollBar(self.ScrollBox, self.ScrollBar, view);
      
     local function ElementDataTranslator(elementData)
-         return elementData;
+        return elementData;
      end;
      ScrollUtil.RegisterTableBuilder(self.ScrollBox, self.tableBuilder, ElementDataTranslator);
  
@@ -91,11 +85,84 @@ function TableBuilderLibTableMixin:Init()
 
 end
 
+function TableBuilderLibTableMixin:AddColumn(columnConfigObj, internal)
+    DevTools_Dump(columnConfigObj)
+    local columnConfig = {}
+    _.forEach(columnConfigDefault, function(entry, key)
+        columnConfig[key] = columnConfigObj[key] and columnConfigObj[key] or entry
+    end)
+
+    columnConfig.template = columnConfig.template or self.cellTemplate
+    columnConfig.sortable = columnConfig.sortable and true or false
+
+    if type(columnConfig.width) == "number" then 
+        self:AddFixedWidthColumn(self, 0, columnConfig.width, columnConfig.padding, columnConfig.padding, columnConfig.sortable, columnConfig.template, columnConfig, columnConfig.headerText);
+    else 
+        if columnConfig.width == "double" then 
+            columnConfig.width = 2
+        elseif columnConfig.width == "half" then 
+            columnConfig.width = 0.5
+        elseif columnConfig.width == "triple" then 
+            columnConfig.width = 3
+        else 
+            columnConfig.width = 1
+        end
+        self:AddFillColumn(self, 0, columnConfig.width, columnConfig.padding, columnConfig.padding, columnConfig.sortable, columnConfig.template, columnConfig, columnConfig.headerText);
+    end
+
+    -- stop here if internal add
+    if internal then return end 
+    
+    --self.tableBuilder:SetTableWidth(self.ScrollBox:GetWidth());
+    self.tableBuilder:Arrange();
+
+    self:RefreshScrollFrame()
+end
+
+
+function TableBuilderLibTableMixin:RemoveColumn(id)
+    print("RemoveColumn")
+   
+    local cols = self.tableBuilder.columns 
+
+    local rcol = cols[id]
+    rcol:Reset()
+    local rheader = rcol:GetHeaderFrame()
+
+    rheader:Hide()
+     table.remove(cols, id)
+    self.tableBuilder.columns = cols
+
+
+    -- self.tableBuilder:Arrange();
+
+
+
+    function Arrange()
+        self = self.tableBuilder
+        local columns = self:GetColumns();
+        if columns and #columns > 0 then
+            self:CalculateColumnSpacing();
+            self:ArrangeHeaders();
+        end
+    
+        for index, row in ipairs(self.rows) do
+            self:ArrangeCells(row);
+        end
+    end
+
+     Arrange()
+
+
+
+    -- self:RefreshScrollFrame()
+end
+
 
 function TableBuilderLibTableMixin:SetData(data)
     if not data then return end
 	self.data = data
-    self:RefreshScrollFrame()
+    --self:RefreshScrollFrame()
 end
 
 function TableBuilderLibTableMixin:RefreshScrollFrame()
@@ -108,17 +175,17 @@ end
 
 
 
-function TableBuilderLibTableMixin:AddColumnInternal(owner, sortOrder, cellTemplate, ...)
+function TableBuilderLibTableMixin:AddColumnInternal(owner, sortable, cellTemplate, config,  headerText,  ...)
 	local column = owner.tableBuilder:AddColumn();
+    column.config = config
 
 
-
-	-- if sortOrder then
-	-- 	local headerName = AuctionHouseUtil.GetHeaderNameFromSortOrder(sortOrder);
-	-- 	column:ConstructHeader("BUTTON", "AuctionHouseTableHeaderStringTemplate", owner, headerName, sortOrder);
-	-- end
-
-  column:ConstructHeader("BUTTON", self.headerTemplate, owner, nil, sortOrder);
+    print(sortable)
+    if sortable then
+        column:ConstructHeader("BUTTON", self.headerTemplate, owner, headerText, sortable);
+    else
+       column:ConstructHeader("Frame", self.headerTemplate, owner, headerText);
+    end
 
 	column:ConstructCells("FRAME", cellTemplate, owner, ...);
 	return column;
@@ -126,8 +193,15 @@ end
 
 function TableBuilderLibTableMixin:AddFixedWidthColumn(owner, padding, width, leftCellPadding, rightCellPadding, sortOrder, cellTemplate, ...)
    local column = self:AddColumnInternal(owner, sortOrder, cellTemplate, ...);
-   DevTool:AddData(column, "column")
 	column:SetFixedConstraints(width, padding);
+	column:SetCellPadding(leftCellPadding, rightCellPadding);
+	return column;
+end
+
+
+function TableBuilderLibTableMixin:AddFillColumn(owner, padding, fillCoefficient, leftCellPadding, rightCellPadding, sortOrder, cellTemplate, ...)
+	local column = self:AddColumnInternal(owner, sortOrder, cellTemplate, ...);
+	column:SetFillConstraints(fillCoefficient, padding);
 	column:SetCellPadding(leftCellPadding, rightCellPadding);
 	return column;
 end
@@ -175,39 +249,34 @@ TableBuilderLibTableHeaderMixin = CreateFromMixins(TableBuilderElementMixin);
 
 
 function TableBuilderLibTableHeaderMixin:OnClick()
-	-- selself.owner:SetSortOrder(selself.sortOrder);
+    if not self.sortable  then return end
+    print("Sort function not yet implemented")	
 end
 
-function TableBuilderLibTableHeaderMixin:Init(owner, headerText, sortOrder)
+function TableBuilderLibTableHeaderMixin:Init(owner, headerText, sortable)
 	self:SetText(headerText);
-
-	-- local find = _.find(owner.sortHeaders, function(entry) return entry == sortOrder; end)
-	-- local interactiveHeader = owner.RegisterHeader and find;
-	-- self:SetEnabled(interactiveHeader);
-	-- selself.owner = owner;
-	-- selself.sortOrder = sortOrder;
-
-	-- if interactiveHeader then
-	-- 	owner:RegisterHeader(self);
-	-- 	self:UpdateArrow();
-	-- else
-	-- 	selself.Arrow:Hide();
-	-- end
+    self.sortable = sortable
+    self:EnableMouse(sortable)
+    if sortable then
+        self.Arrow:Show();
+    else
+        self.Arrow:Hide();
+    end
 end
 
 function TableBuilderLibTableHeaderMixin:UpdateArrow(reverse)
-	if selself.owner.sort == selself.sortOrder then 
+	if self.owner.sort == self.sortOrder then 
 		self:SetArrowState(reverse)
-		selself.Arrow:Show();
+		self.Arrow:Show();
 	else 
-		selself.Arrow:Hide();
+		self.Arrow:Hide();
 	end
 end
 
 function TableBuilderLibTableHeaderMixin:SetArrowState(reverse)
 	if reverse then
-		selself.Arrow:SetTexCoord(0, 1, 1, 0);
+		self.Arrow:SetTexCoord(0, 1, 1, 0);
 	else 
-		selself.Arrow:SetTexCoord(0, 1, 0, 1);
+		self.Arrow:SetTexCoord(0, 1, 0, 1);
 	end
 end

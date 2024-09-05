@@ -5,7 +5,7 @@
 
 
 
-	<Frame name="TableBuilderLibTableFrame" mixin="TableBuilderLibTableMixin"  virtual="true">
+	<Frame name="TableBuilderLibTableFrame" mixin="TableBuilderLibTableMixin" enableMouse="true"  virtual="true">
 		<Frames>
 			<Frame parentKey="HeaderContainer" >
 				<Size x="0" y="19"/>

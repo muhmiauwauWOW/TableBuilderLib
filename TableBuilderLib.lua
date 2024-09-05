@@ -13,7 +13,7 @@ end
 
 local i = 0
 
-function lib:New(name, parentFrame, headers, data)
+function lib:New(name, parentFrame, columnsConfig, data)
    i = i + 1
    name = name or ("TableBuilderLibTableFrame" .. i)
    parentFrame = parentFrame or parentFrame
@@ -24,12 +24,29 @@ function lib:New(name, parentFrame, headers, data)
    local f = CreateFrame("Frame", "TableBuilderLibTableFrame" .. name, parentFrame or UIParent, "TableBuilderLibTableFrame")
    f:SetAllPoints()
    f.data = data or {}
-   f.headers = headers or {}
+   f.columnsConfig = columnsConfig or {}
    f:Init()
    f:RefreshScrollFrame()
 
    return f
 end
+
+
+
+
+lib.columnConfigDefault = {
+   -- Id = nil,
+   -- width = 100,
+   headerText = "",
+   -- padding = 0,
+   -- template = nil
+}
+
+
+function lib:getColumnConfig()
+   return CopyTable(lib.columnConfigDefault)
+end
+
 
 
 
