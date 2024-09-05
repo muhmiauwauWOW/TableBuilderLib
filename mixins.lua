@@ -113,7 +113,7 @@ function TableBuilderLibTableMixin:SetData(data, internal)
     if not data then return end
 
     
-    DevTool:AddData(data, "SetData")
+    -- DevTool:AddData(data, "SetData")
 
     self.data = data
     
@@ -226,7 +226,6 @@ function TableBuilderLibTableMixin:RemoveColumn(ID)
     local newColumns = {}
 
     _.forEach(columns, function(col, idx)
-        print("columns",idx)
         table.insert(newColumns, col)
     end)
 
@@ -254,20 +253,53 @@ end
 
 function TableBuilderLibTableMixin:ReorderColumns(cols)
     self.columIdMap = CopyTable(cols)
-    self.tableBuilder:Arrange()
+
+    local columns = self.tableBuilder:GetColumns()
+    local newColumns = {}
+    local newTableData = {}
+
+    _.forEach(self.tableData, function(row, rowIdx)
+        local newRow = {}
+        _.forEach(self.columIdMap, function(colId)
+            local index =  _.findIndex(columns, function(e) return e.config.id == colId end)
+            if not index then  return end
+            table.insert(newRow, row[index])
+        end)
+        table.insert(newTableData, newRow)
+    end)
+
+    _.forEach(self.columIdMap, function(colId, idx)
+        local index =  _.findIndex(columns, function(e) return e.config.id == colId end)
+        if not index then  return end
+        
+        if columns[index] then 
+            table.insert(newColumns, columns[index])
+        end
+    end)
+
+   
+    self.tableBuilder.columns = newColumns
+    self.tableData = newTableData
+
+
     self:CreateHeaders()
     self.tableBuilder:CalculateColumnSpacing();
     self.tableBuilder:ArrangeHeaders();
 
+    for index, row in ipairs(self.tableBuilder.rows) do
+        self.tableBuilder:ArrangeCells(row);
+    end
+    self:RefreshScrollFrame()
+
 end
 function TableBuilderLibTableMixin:CreateHeaders()
-   DevTool:AddData(self.columIdMap, "self.columIdMap")
+--    DevTool:AddData(self.columIdMap, "self.columIdMap")
 
     local columns = self.tableBuilder:GetColumns()
     self.tableBuilder.headerPoolCollection:ReleaseAll()
    _.forEach(self.columIdMap, function(id, idx)
         local config =  _.find(self.columnsConfigObj, function(e) return e.id == id end)
-        DevTool:AddData(self.columIdMap, "self.columIdMap")
+        -- DevTool:AddData(self.columIdMap, "self.columIdMap")
 
         if config.sortable then
             columns[idx]:ConstructHeader("BUTTON", self.headerTemplate, self, idx,  config.id,  config.headerText, config.sortable);
