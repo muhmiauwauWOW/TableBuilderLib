@@ -7,7 +7,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Generate docs with LDoc
-        uses: lunarmodules/ldoc@v0
+        uses: lunarmodules/ldoc@latest
       - name: Deploy
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
         uses: peaceiris/actions-gh-pages@v3
