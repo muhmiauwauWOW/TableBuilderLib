@@ -3,6 +3,8 @@ local _ = LibStub("LibLodash-1"):Get()
 
 
 
+
+
 local columnConfigDefault = {
     id = nil,
     width = "fill",
@@ -20,9 +22,9 @@ TableBuilderLibTableMixin = {}
 function TableBuilderLibTableMixin:OnLoad()
     self.TableBuilderLib = true
 
-    self.headerTemplate = "TableBuilderLibTableHeaderTemplate"
-    self.cellTemplate = "TableBuilderLibTableCellTemplate"
-    self.rowTemplate = "TableBuilderLibTableLineTemplate"
+    self.headerTemplate = nil
+    self.cellTemplate = nil
+    self.rowTemplate = nil
 
     self.data = {}
     self.columnsConfig = {}
@@ -32,12 +34,14 @@ function TableBuilderLibTableMixin:OnLoad()
     self.sort = 1
     self.sortReverse = false
 
+    print("OnLoad")
+
     -- self:Init()
 end
 
 function TableBuilderLibTableMixin:Init()
 
-   
+    
  
     local tableBuilder = CreateTableBuilder({});
     self.tableBuilder = tableBuilder;
@@ -64,16 +68,12 @@ function TableBuilderLibTableMixin:Init()
     end)
 
 
-
-
-    
-  
  
     local view = CreateScrollBoxListLinearView();
      view:SetElementFactory(function(factory, elementData)
          local function Initializer(button, elementData)
          end
-         factory(self.lineTemplate or self.rowTemplate, Initializer);
+         factory(self.rowTemplate, Initializer);
      end);
  
     ScrollUtil.InitScrollBoxListWithScrollBar(self.ScrollBox, self.ScrollBar, view);
@@ -132,6 +132,7 @@ function TableBuilderLibTableMixin:addColumnToMap(colId)
     if not check then 
         table.insert(self.columIdMap, colId)
     end
+
 end
 
 
@@ -202,6 +203,8 @@ function TableBuilderLibTableMixin:AddColumn(columnConfigObj, internal)
     -- stop here if internal add
     if internal then return end 
     self:UpdateTableData()
+
+    self:CreateHeaders()
     
     --self.tableBuilder:SetTableWidth(self.ScrollBox:GetWidth());
     self.tableBuilder:Arrange();
@@ -367,9 +370,24 @@ end
 
 
 
-TableBuilderLibTableLineMixin = CreateFromMixins(TableBuilderRowMixin);
 
-function TableBuilderLibTableLineMixin:GetRowData()
+
+
+
+
+
+
+
+--- Default mixins for Templates
+
+
+
+
+
+
+TableBuilderLibLineMixin = CreateFromMixins(TableBuilderRowMixin);
+
+function TableBuilderLibLineMixin:GetRowData()
 	return self.rowData;
 end
 
@@ -377,36 +395,27 @@ end
 
 
 
-TableBuilderLibTableBuilderMixin = {}
+
+TableBuilderLibCellMixin = CreateFromMixins(TableBuilderCellMixin);
 
 
-
-TableBuilderLibTableCellMixin = CreateFromMixins(TableBuilderCellMixin);
-
-
-function TableBuilderLibTableCellMixin:Populate(data,index)
+function TableBuilderLibCellMixin:Populate(data,index)
     self.Text:SetText(data[index])
 end
 
 
 
 
+TableBuilderLibHeaderMixin = CreateFromMixins(TableBuilderElementMixin);
 
 
 
-
-
-
-TableBuilderLibTableHeaderMixin = CreateFromMixins(TableBuilderElementMixin);
-
-
-
-function TableBuilderLibTableHeaderMixin:OnClick()
+function TableBuilderLibHeaderMixin:OnClick()
     if not self.sortable  then return end
     self.owner:SetSortOrder(self.sortOrder);
 end
 
-function TableBuilderLibTableHeaderMixin:Init(owner, sortOrder, id, headerText, sortable)
+function TableBuilderLibHeaderMixin:Init(owner, sortOrder, id, headerText, sortable)
     self.sortOrder = sortOrder
     self.id = id
 	self:SetText(headerText);
@@ -419,7 +428,7 @@ function TableBuilderLibTableHeaderMixin:Init(owner, sortOrder, id, headerText, 
     self:UpdateArrow(owner.sortReverse)
 end
 
-function TableBuilderLibTableHeaderMixin:UpdateArrow(reverse)
+function TableBuilderLibHeaderMixin:UpdateArrow(reverse)
 	if self.owner.sort == self.sortOrder then 
 		self:SetArrowState(reverse)
 		self.Arrow:Show();
@@ -428,10 +437,15 @@ function TableBuilderLibTableHeaderMixin:UpdateArrow(reverse)
 	end
 end
 
-function TableBuilderLibTableHeaderMixin:SetArrowState(reverse)
+function TableBuilderLibHeaderMixin:SetArrowState(reverse)
 	if reverse then
 		self.Arrow:SetTexCoord(0, 1, 1, 0);
 	else 
 		self.Arrow:SetTexCoord(0, 1, 0, 1);
 	end
 end
+
+
+
+
+

@@ -1,84 +1,11 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
-	<Script file="mixins.lua"/>	
-	<Script file="TableBuilderLib.lua"/>	
-
-
-
-	<Frame name="TableBuilderLibTableFrame" mixin="TableBuilderLibTableMixin" enableMouse="true"  virtual="true">
-		<Frames>
-			<Frame parentKey="HeaderContainer" >
-				<Size x="0" y="19"/>
-				<Anchors>
-					<Anchor point="TOPLEFT" x="4" y="-1"/>
-					<Anchor point="TOPRIGHT" x="-26" y="-1"/>
-				</Anchors>
-			</Frame>
-			<Frame parentKey="ScrollBox" inherits="WowScrollBoxList">
-				<Anchors>
-					<Anchor point="TOPLEFT" relativeKey="$parent.HeaderContainer" relativePoint="BOTTOMLEFT" x="0" y="-6"/>
-					<Anchor point="RIGHT" relativeKey="$parent.HeaderContainer" relativePoint="RIGHT"/>
-					<Anchor point="BOTTOM" x="0" y="3"/>
-				</Anchors>
-			</Frame>
-			<EventFrame parentKey="ScrollBar" inherits="MinimalScrollBar">
-				<Anchors>
-					<Anchor point="TOPLEFT" relativeKey="$parent.ScrollBox" relativePoint="TOPRIGHT" x="9" y="0"/>
-					<Anchor point="BOTTOMLEFT" relativeKey="$parent.ScrollBox" relativePoint="BOTTOMRIGHT" x="9" y="4"/>
-				</Anchors>
-			</EventFrame>
-		</Frames>
-		<Scripts>
-			<OnLoad method="OnLoad"/>
-		</Scripts>
-	</Frame>
-
-
-
-
-
-
-	<Button name="TableBuilderLibTableHeaderTemplate" mixin="TableBuilderLibTableHeaderMixin" inherits="ColumnDisplayButtonShortTemplate" virtual="true">
-		<Size x="0" y="19"/>
-		<Layers>
-			<Layer level="OVERLAY">
-				<Texture parentKey="Arrow" atlas="auctionhouse-ui-sortarrow" useAtlasSize="true">
-					<Anchors>
-						<Anchor point="LEFT" relativeKey="$parent.Text" relativePoint="RIGHT" x="3" y="0"/>
-					</Anchors>
-				</Texture>
-			</Layer>
-		</Layers>
-		<Scripts>
-			<OnClick method="OnClick"/>
-		</Scripts>
-	</Button>
-
-   <Frame name="TableBuilderLibTableCellTemplate" mixin="TableBuilderLibTableCellMixin" virtual="true">
-		<Size x="0" y="16"/>
-		<Layers>
-			<Layer level="BACKGROUND">
-				<FontString parentKey="Text" inherits="Number14FontWhite" justifyH="LEFT" setAllPoints="true"/>
-			</Layer>
-			<!-- <Layer level="OVERLAY">
-				<Texture parentKey="Background" atlas="UI-Character-Info-ItemLevel-Bounce" useAtlasSize="true" alpha="0.3">
-					<Size x="0" y="16"/>
-					<Anchors>
-						<Anchor point="LEFT" x="0" />
-					</Anchors>
-				</Texture>
-			</Layer> -->
-		</Layers>
-	</Frame>
-
-	<Frame name="TableBuilderLibTableLineTemplate" mixin="TableBuilderLibTableLineMixin" virtual="true">
-		<Size x="0" y="20"/>
-		<Anchors>
-			<Anchor point="LEFT"/>
-			<Anchor point="RIGHT"/>
-		</Anchors>
-	</Frame>
-
 	
+	
+	<Script file="Libs\LibStub\LibStub.lua"/>	
+	<Script file="Libs\LibLodash\LibLodash.lua"/>	
+
+	<Script file="mixins.lua"/>	
+	<Script file="TableBuilderLib.lua"/>
 
 </Ui>
