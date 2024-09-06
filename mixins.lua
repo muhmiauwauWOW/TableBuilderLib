@@ -67,39 +67,26 @@ function TableBuilderLibTableMixin:Init()
 
  
     local view = CreateScrollBoxListLinearView();
-     view:SetElementFactory(function(factory, elementData)
-         local function Initializer(button, elementData)
-         end
-         factory(self.rowTemplate, Initializer);
-     end);
+    view:SetElementFactory(function(factory, elementData)
+        local function Initializer(button, elementData)
+        end
+        factory(self.rowTemplate, Initializer);
+    end);
  
     ScrollUtil.InitScrollBoxListWithScrollBar(self.ScrollBox, self.ScrollBar, view);
      
     local function ElementDataTranslator(elementData)
         return elementData;
-     end;
-     ScrollUtil.RegisterTableBuilder(self.ScrollBox, self.tableBuilder, ElementDataTranslator);
+    end;
+    ScrollUtil.RegisterTableBuilder(self.ScrollBox, self.tableBuilder, ElementDataTranslator);
  
-
-
-
-     self:SetData(self.data, true)
+    self:SetData(self.data, true)
  
      
     self:CreateHeaders()
- 
-    -- tableBuilder:AddRow(self.tableBuilder, self.data[1]);
- 
-    -- self.tableBuilder:AddRow(self.rows, 1)
-    -- _.forEach(self.data, function(row, idx)
-    --       self.tableBuilder:AddRow(1, idx)
- 
-    --       DevTool:AddData(row, "row")
-    -- end)
- 
+
     self.tableBuilder:SetTableWidth(self.ScrollBox:GetWidth());
     self.tableBuilder:Arrange();
- 
     self:RefreshScrollFrame()
 end
 
@@ -146,7 +133,7 @@ function TableBuilderLibTableMixin:UpdateTableData()
     _.forEach(data, function(row)
         local newRow = {}
         _.forEach(self.columIdMap, function(key)
-            table.insert(newRow, row[key] or key)
+            table.insert(newRow, row[key])
         end)
         table.insert(newData, newRow)
     end)
@@ -193,6 +180,7 @@ function TableBuilderLibTableMixin:AddColumn(columnConfigObj, internal)
         else 
             columnConfig.width = 1
         end
+
         self:AddFillColumn(self, 0, columnConfig.width, columnConfig.padding, columnConfig.padding, columnConfig.sortable, columnConfig.cellTemplate, columnConfig, columnConfig.headerText);
     end
 
@@ -295,18 +283,22 @@ function TableBuilderLibTableMixin:ReorderColumns(cols)
 
 end
 function TableBuilderLibTableMixin:CreateHeaders()
-   DevTool:AddData(self.columnsConfigObj, "self.columnsConfigObj")
 
+    -- local headers = {}
     local columns = self.tableBuilder:GetColumns()
     self.tableBuilder.headerPoolCollection:ReleaseAll()
    _.forEach(self.columIdMap, function(id, idx)
         local config = _.find(self.columnsConfigObj, function(e) return e.id == id end)
-        if config.sortable then
-           columns[idx]:ConstructHeader("Button", self.headerTemplate, self, idx,  config.id,  config.headerText, config.sortable);
-        else
-           columns[idx]:ConstructHeader("Button", self.headerTemplate, self, idx,  config.id, config.headerText, config.sortable);
-        end
-   end)
+        columns[idx]:ConstructHeader("Button", self.headerTemplate, self, idx,  config.id,  config.headerText, config.sortable);
+        -- if columns[idx].headerFrame then 
+        --      headers[idx] = columns[idx].headerFrame 
+        -- end
+    end)
+
+    -- if _.size(headers) >0 then 
+    --     self.tableBuilder:CalculateColumnSpacing();
+    --     self.tableBuilder:ArrangeHeaders();
+    -- end
 
 end
 
