@@ -4,7 +4,7 @@ description = "A Lua documentation tool"
 format = "discount"
 backtick_references = false
 file = "TableBuilderLib.lua"
-dir = "public"
+dir = "docs"
 readme = "Readme.md"
 style = "!new"
 kind_names = {
@@ -12,5 +12,5 @@ kind_names = {
    script = "Programs"
 }
 examples  =  {
-   
+
 }
