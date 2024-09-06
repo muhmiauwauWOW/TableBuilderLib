@@ -3,8 +3,6 @@ local _ = LibStub("LibLodash-1"):Get()
 
 
 
-
-
 local columnConfigDefault = {
     id = nil,
     width = "fill",
@@ -34,7 +32,6 @@ function TableBuilderLibTableMixin:OnLoad()
     self.sort = 1
     self.sortReverse = false
 
-    print("OnLoad")
 
     -- self:Init()
 end
@@ -159,10 +156,12 @@ end
 
 
 function TableBuilderLibTableMixin:AddColumn(columnConfigObj, internal)
-    local columnConfig = {}
+    local columnConfig = columnConfigObj
     _.forEach(columnConfigDefault, function(entry, key)
         columnConfig[key] = columnConfigObj[key] and columnConfigObj[key] or entry
     end)
+
+
 
 
     if not internal then
@@ -177,13 +176,13 @@ function TableBuilderLibTableMixin:AddColumn(columnConfigObj, internal)
 	
     columnConfig.id = columnConfigObj.id
     
-    columnConfig.template = columnConfig.template or self.cellTemplate
+    columnConfig.cellTemplate = columnConfig.cellTemplate or self.cellTemplate
     columnConfig.sortable = columnConfig.sortable and true or false
 
   
 
     if type(columnConfig.width) == "number" then 
-        self:AddFixedWidthColumn(self, 0, columnConfig.width, columnConfig.padding, columnConfig.padding, columnConfig.sortable, columnConfig.template, columnConfig, columnConfig.headerText);
+        self:AddFixedWidthColumn(self, 0, columnConfig.width, columnConfig.padding, columnConfig.padding, columnConfig.sortable, columnConfig.cellTemplate, columnConfig, columnConfig.headerText);
     else 
         if columnConfig.width == "double" then 
             columnConfig.width = 2
@@ -194,7 +193,7 @@ function TableBuilderLibTableMixin:AddColumn(columnConfigObj, internal)
         else 
             columnConfig.width = 1
         end
-        self:AddFillColumn(self, 0, columnConfig.width, columnConfig.padding, columnConfig.padding, columnConfig.sortable, columnConfig.template, columnConfig, columnConfig.headerText);
+        self:AddFillColumn(self, 0, columnConfig.width, columnConfig.padding, columnConfig.padding, columnConfig.sortable, columnConfig.cellTemplate, columnConfig, columnConfig.headerText);
     end
 
 
@@ -296,23 +295,30 @@ function TableBuilderLibTableMixin:ReorderColumns(cols)
 
 end
 function TableBuilderLibTableMixin:CreateHeaders()
---    DevTool:AddData(self.columIdMap, "self.columIdMap")
+   DevTool:AddData(self.columnsConfigObj, "self.columnsConfigObj")
 
     local columns = self.tableBuilder:GetColumns()
     self.tableBuilder.headerPoolCollection:ReleaseAll()
    _.forEach(self.columIdMap, function(id, idx)
-        local config =  _.find(self.columnsConfigObj, function(e) return e.id == id end)
-        -- DevTool:AddData(self.columIdMap, "self.columIdMap")
-
+        local config = _.find(self.columnsConfigObj, function(e) return e.id == id end)
         if config.sortable then
-            columns[idx]:ConstructHeader("BUTTON", self.headerTemplate, self, idx,  config.id,  config.headerText, config.sortable);
+           columns[idx]:ConstructHeader("Button", self.headerTemplate, self, idx,  config.id,  config.headerText, config.sortable);
         else
-            columns[idx]:ConstructHeader("Frame", self.headerTemplate, self, idx,  config.id, config.headerText, config.sortable);
+           columns[idx]:ConstructHeader("Button", self.headerTemplate, self, idx,  config.id, config.headerText, config.sortable);
         end
    end)
 
 end
 
+
+function TableBuilderLibTableMixin:GetWidth()
+
+    local width = 0
+    for header in self.tableBuilder:EnumerateHeaders() do
+        width = width + header:GetWidth() + 4
+    end
+    return width
+end
 
 
 
@@ -321,7 +327,7 @@ function TableBuilderLibTableMixin:AddColumnInternal(owner, sortable, cellTempla
 	local column = owner.tableBuilder:AddColumn();
     column.config = config
 
-	column:ConstructCells("FRAME", cellTemplate, owner, ...);
+	column:ConstructCells("FRAME", cellTemplate, owner, config, ...);
 	return column;
 end
 
@@ -399,7 +405,8 @@ end
 TableBuilderLibCellMixin = CreateFromMixins(TableBuilderCellMixin);
 
 
-function TableBuilderLibCellMixin:Populate(data,index)
+function TableBuilderLibCellMixin:Populate(data, index)
+    assert( type(data[index]) ~= string, "Cell value should be string, Use custom 'TableBuilderCellMixin' for other types")
     self.Text:SetText(data[index])
 end
 

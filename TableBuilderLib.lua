@@ -8,25 +8,40 @@ if not lib then
    return	-- already loaded and no upgrade necessary
 end
 
-local i = 0
-local function getTableName(name)
-   if name then return "TableBuilderLibTableFrame" .. name end
 
-   i = i + 1
-   return "TableBuilderLibTableFrame" .. i
+
+
+
+
+--lib:Setup("TableBuilderLibHeaderTemplate", "TableBuilderLibLineTemplate", "TableBuilderLibCellTemplate")
+
+function lib:Setup(name, headerTemplate, rowTemplate, cellTemplate)
+   local l = CopyTable(self)
+   print(name)
+   l.name = name
+   l.frameCounter = 0
+   l.headerTemplate = headerTemplate
+   l.rowTemplate = rowTemplate
+   l.cellTemplate = cellTemplate
+
+   return l
+end
+
+
+local function getTable(name, sname)
+   local name = "TableBuilderLibFrames_" .. sname .. "_" .. name
+   local table = _G[name]
+   print("getTable", name)
+   assert(table, string.format("%s table not found", name));
+   assert(table.TableBuilderLib, string.format("%s is not a valid TableBuilderLib table", name));
+   return table
 end
 
 
 
 
 
---lib:Setup("TableBuilderLibTableHeaderTemplate", "TableBuilderLibTableLineTemplate", "TableBuilderLibTableCellTemplate")
 
-function lib:Setup(headerTemplate, rowTemplate, cellTemplate)
-   self.headerTemplate = headerTemplate--"TableBuilderLibTableHeaderTemplate"
-   self.rowTemplate = rowTemplate--"TableBuilderLibTableLineTemplate"
-   self.cellTemplate = cellTemplate--"TableBuilderLibTableCellTemplate"
-end
 
 
 
@@ -37,43 +52,22 @@ function lib:New(name, parentFrame, config, columnsConfig, data)
    assert(self.rowTemplate, string.format("Row Template '%s' not found", self.rowTemplate or ""));
    assert(self.cellTemplate, string.format("Cell Template '%s' not found", self.cellTemplat or ""));
 
+
+   local function getTableName(name)
+      local tableName = "TableBuilderLibFrames_" .. self.name .. "_" .. name
+      local check = _G[tableName]
+      assert(check == nil, string.format("Table with the name '%s' already exits", name));
+      if check then return nil end
+      if name then return tableName end
+   
+      self.frameCounter =  self.frameCounter + 1
+      return "TableBuilderLibFrames_" .. self.name .. "_" .. self.frameCounter
+   end
+   local bnla = self.name
+
+   print("name", self.name, bnla)
    parentFrame = parentFrame or UIParent
-
-
-
-
-
---    <Frame name="TableBuilderLibTableFrame" mixin="TableBuilderLibTableMixin" enableMouse="true"  virtual="true">
---    <Frames>
---       <Frame parentKey="HeaderContainer" >
---          <Size x="0" y="19"/>
---          <Anchors>
---             <Anchor point="TOPLEFT" x="0" y="0"/>
---             <Anchor point="TOPRIGHT" x="-26" y="0"/>
---          </Anchors>
---       </Frame>
---       <Frame parentKey="ScrollBox" inherits="WowScrollBoxList">
---          <Anchors>
---             <Anchor point="TOPLEFT" relativeKey="$parent.HeaderContainer" relativePoint="BOTTOMLEFT" x="0" y="-6"/>
---             <Anchor point="RIGHT" relativeKey="$parent.HeaderContainer" relativePoint="RIGHT"/>
---             <Anchor point="BOTTOM" x="0" y="0"/>
---          </Anchors>
---       </Frame>
---       <EventFrame parentKey="ScrollBar" inherits="MinimalScrollBar">
---          <Anchors>
---             <Anchor point="TOPLEFT" relativeKey="$parent.ScrollBox" relativePoint="TOPRIGHT" x="9" y="0"/>
---             <Anchor point="BOTTOMLEFT" relativeKey="$parent.ScrollBox" relativePoint="BOTTOMRIGHT" x="9" y="4"/>
---          </Anchors>
---       </EventFrame>
---    </Frames>
---    <Scripts>
---       <OnLoad method="OnLoad"/>
---    </Scripts>
--- </Frame>
-
-
-
-   local f = CreateFrame("Frame", getTableName(name), parentFrame)-- "TableBuilderLibTableFrame")
+   local f = CreateFrame("Frame", getTableName(name), parentFrame)
    f:SetAllPoints()
 
 
@@ -118,44 +112,41 @@ end
 
 
 function lib:SetData(name, config)
-   local name = getTableName(name)
-   local table = _G[name]
-   assert(table.TableBuilderLib, string.format("%s is not a valid TableBuilderLib table", name));
+   local table = getTable(name, self.name)
    table:SetData(config)
 end
 
 
 function lib:AddColumn(name, config)
-   local name = getTableName(name)
-   local table = _G[name]
-   assert(table.TableBuilderLib, string.format("%s is not a valid TableBuilderLib table", name));
+   local table = getTable(name, self.name)
    table:AddColumn(config)
 end
 
 
 function lib:RemoveColumn(name, id)
-   local name = getTableName(name)
-   local table = _G[name]
-   assert(table.TableBuilderLib, string.format("%s is not a valid TableBuilderLib table", name));
+   local table = getTable(name, self.name)
    table:RemoveColumn(id)
 end
 
 
 function lib:GetColumns(name)
-   local name = getTableName(name)
-   local table = _G[name]
-   assert(table.TableBuilderLib, string.format("%s is not a valid TableBuilderLib table", name));
+   local table = getTable(name, self.name)
    return table.columIdMap
 end
 
 
 
 function lib:ReorderColumns(name, cols)
-   local name = getTableName(name)
-   local table = _G[name]
-   assert(table.TableBuilderLib, string.format("%s is not a valid TableBuilderLib table", name));
+   local table = getTable(name, self.name)
    table:ReorderColumns(CopyTable(cols))
 end
 
+
+
+
+function lib:GetWidth(name)
+   local table = getTable(name, self.name)
+   return table:GetWidth()
+end
 
 
