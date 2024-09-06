@@ -1,11 +1,29 @@
-local lib = LibStub:NewLibrary("TableBuilderLib", 1)
+------
+-- TableBuilderLib easy way to build performat tables
+-- @script TableBuilderLib
+
+--- module version.
+local version = "@project-version@"
+local versionObj = {}
+
+for w in string.gmatch(version, "[0-9]*") do
+    if w ~= "" then 
+        table.insert(versionObj, w)
+    end
+end
+
+if #versionObj == 0 then
+    versionObj = {1, 1}
+end
+
+local LibLodash = LibStub:NewLibrary("LibLodash-" .. versionObj[1], versionObj[2])
+
+local lib = LibStub:NewLibrary("TableBuilderLib-" .. versionObj[1], versionObj[2])
 local _ = LibStub("LibLodash-1"):Get()
 
-
-
-
+-- already loaded and no upgrade necessary
 if not lib then
-   return	-- already loaded and no upgrade necessary
+   return
 end
 
 
@@ -15,6 +33,13 @@ end
 
 --lib:Setup("TableBuilderLibHeaderTemplate", "TableBuilderLibLineTemplate", "TableBuilderLibCellTemplate")
 
+-----
+-- Setup function
+-- @string name
+-- @string headerTemplate
+-- @string rowTemplate
+-- @string cellTemplate
+-- @treturn TableBuilderLibObj
 function lib:Setup(name, headerTemplate, rowTemplate, cellTemplate)
    local l = CopyTable(self)
    l.name = name
@@ -28,32 +53,32 @@ end
 
 
 local function getTable(name, sname)
-   local name = "TableBuilderLibFrames_" .. sname .. "_" .. name
-   local table = _G[name]
-   assert(table, string.format("%s table not found", name));
-   assert(table.TableBuilderLib, string.format("%s is not a valid TableBuilderLib table", name));
+   local tableName = "TableBuilderLibFrames_" .. sname .. "_" .. name
+   local table = _G[tableName]
+   assert(table, string.format("%s table not found", tableName));
+   assert(table.TableBuilderLib, string.format("%s is not a valid TableBuilderLib table", tableName));
    return table
 end
 
 
 
 
-
-
-
-
-
-
-
+--- create an new table
+-- @tparam string name  the descriptddddion of this parameter as verbose text
+-- @tparam table parentFrame
+-- @tparam table config
+-- @tparam table columnsConfig
+-- @tparam table data 
+--
 function lib:New(name, parentFrame, config, columnsConfig, data)
    assert(self.headerTemplate, string.format("Header Template '%s' not found", self.headerTemplate or ""));
    assert(self.rowTemplate, string.format("Row Template '%s' not found", self.rowTemplate or ""));
    assert(self.cellTemplate, string.format("Cell Template '%s' not found", self.cellTemplat or ""));
 
 
-   config = CopyTable(config) or {}
-   columnsConfig = CopyTable(columnsConfig) or {}
-   data = CopyTable(data) or {}
+   config = config and CopyTable(config) or {}
+   columnsConfig = columnsConfig and CopyTable(columnsConfig) or {}
+   data = data and CopyTable(data) or {}
 
    local function getTableName(name)
       local tableName = "TableBuilderLibFrames_" .. self.name .. "_" .. name
@@ -73,7 +98,8 @@ function lib:New(name, parentFrame, config, columnsConfig, data)
    local headerHeight = config.headerHeight or 19
 
 
-   local f = CreateFrame("Frame", getTableName(name), parentFrame)
+   local tableName =  getTableName(name)
+   local f = CreateFrame("Frame", tableName, parentFrame)
    f:SetAllPoints()
    f.HeaderContainer = CreateFrame("Frame", nil, f)
    f.HeaderContainer:SetPoint("TOPLEFT", 0, 0)
@@ -110,12 +136,11 @@ function lib:New(name, parentFrame, config, columnsConfig, data)
 
    if self.name == "Dev" then
       f.dev = CreateFrame("Frame", nil, f, "TableBuilderLibDev")
-      DevTools_Dump( f.dev)
       f.dev:SetPoint("TOPLEFT", f, "TOPRIGHT", 0, 0)
       f.dev.name = name 
    end
 
-   return f
+   return self
 end
 
 
@@ -143,6 +168,12 @@ function lib:GetColumns(name)
 end
 
 
+function lib:SetColumnsConfig(name, ColumnConfig)
+   local table = getTable(name, self.name)
+   return table:SetColumnsConfig(ColumnConfig)
+end
+
+
 
 function lib:ReorderColumns(name, cols)
    local table = getTable(name, self.name)
@@ -156,5 +187,22 @@ function lib:GetWidth(name)
    local table = getTable(name, self.name)
    return table:GetWidth()
 end
+
+
+
+function lib:SetSelectedRow(name, row)
+   local table = getTable(name, self.name)
+   table:SetSelectedRow(row)
+end
+
+
+
+function lib:ScrollToEntryIndex(name, index)
+   local table = getTable(name, self.name)
+   table:ScrollToEntryIndex(index)
+end
+
+
+
 
 

@@ -18,6 +18,7 @@ local columnConfigDefault = {
 TableBuilderLibTableMixin = {}
 
 function TableBuilderLibTableMixin:OnLoad()
+    self.isInitialized = false
     self.TableBuilderLib = true
 
     self.headerTemplate = nil
@@ -28,6 +29,7 @@ function TableBuilderLibTableMixin:OnLoad()
     self.columnsConfig = {}
     self.columnsConfigObj = {}
     self.columIdMap = {}
+    self.tableData = {}
 
     self.sort = 1
     self.sortReverse = false
@@ -69,6 +71,10 @@ function TableBuilderLibTableMixin:Init()
     local view = CreateScrollBoxListLinearView();
     view:SetElementFactory(function(factory, elementData)
         local function Initializer(button, elementData)
+            if self.highlightCallback then
+                local rowData = button.rowData;
+                elementData = self.highlightCallback(rowData, self.selectedRowData, elementData);
+            end
         end
         factory(self.rowTemplate, Initializer);
     end);
@@ -88,6 +94,9 @@ function TableBuilderLibTableMixin:Init()
     self.tableBuilder:SetTableWidth(self.ScrollBox:GetWidth());
     self.tableBuilder:Arrange();
     self:RefreshScrollFrame()
+
+
+    self.isInitialized = true
 end
 
 
@@ -143,12 +152,14 @@ end
 
 
 function TableBuilderLibTableMixin:AddColumn(columnConfigObj, internal)
-    local columnConfig = columnConfigObj
-    _.forEach(columnConfigDefault, function(entry, key)
-        columnConfig[key] = columnConfigObj[key] and columnConfigObj[key] or entry
-    end)
+    -- local columnConfig = columnConfigObj
+    -- _.forEach(columnConfigDefault, function(entry, key)
+    --     columnConfig[key] = columnConfigObj[key] and columnConfigObj[key] or entry
+    -- end)
 
+    -- table.insert(self.columnsConfigObj, columnConfig)
 
+    local columnConfig = self:SetColumnsConfigEntry(columnConfigObj)
 
 
     if not internal then
@@ -185,7 +196,10 @@ function TableBuilderLibTableMixin:AddColumn(columnConfigObj, internal)
     end
 
 
-    table.insert(self.columnsConfigObj, columnConfig)
+    self.columnsConfigObj[#self.columnsConfigObj] = columnConfig
+
+
+    
 
     -- stop here if internal add
     if internal then return end 
@@ -198,6 +212,42 @@ function TableBuilderLibTableMixin:AddColumn(columnConfigObj, internal)
 
     self:RefreshScrollFrame()
 end
+
+
+function TableBuilderLibTableMixin:SetColumnsConfig(ColumnConfig)
+    ColumnConfig = ColumnConfig and CopyTable(ColumnConfig) or {}
+
+    self.columnsConfigObj = {}
+    self.columIdMap = {}
+    _.forEach(ColumnConfig, function(entry, idx)
+        table.insert(self.columIdMap,  entry.id)
+        self:AddColumn(entry, true)
+    end)
+
+   self:UpdateTableData()
+   self:CreateHeaders()    
+   self.tableBuilder:Arrange();
+   self:RefreshScrollFrame()
+end
+
+function TableBuilderLibTableMixin:SetColumnsConfigEntry(columnConfigEntry, idx)
+
+    local columnConfig = columnConfigEntry
+    _.forEach(columnConfigDefault, function(entry, key)
+        columnConfig[key] = columnConfigEntry[key] and columnConfigEntry[key] or entry
+    end)
+
+    columnConfig = CopyTable(columnConfig)
+
+    if idx then 
+        self.columnsConfigObj[idx] = columnConfig
+    else 
+        table.insert(self.columnsConfigObj, columnConfig)
+    end
+
+    return columnConfig
+end
+
 
 
 function TableBuilderLibTableMixin:RemoveColumn(ID)
@@ -234,6 +284,7 @@ function TableBuilderLibTableMixin:RemoveColumn(ID)
 end
 
 function TableBuilderLibTableMixin:RefreshScrollFrame()
+    print("RefreshScrollFrame")
 	local numResults = self.getNumElements();
 	local dataProvider = CreateIndexRangeDataProvider(numResults);
 	self.ScrollBox:SetDataProvider(dataProvider, ScrollBoxConstants.RetainScrollPosition);
@@ -362,6 +413,126 @@ function TableBuilderLibTableMixin:SetSortOrder(sortOrder)
 	end)
 	self:RefreshScrollFrame();
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function TableBuilderLibTableMixin:SetLineOnEnterCallback(callback)
+	self.lineOnEnterCallback = callback;
+end
+
+function TableBuilderLibTableMixin:OnEnterListLine(line, rowData)
+	if self.lineOnEnterCallback then
+		self.lineOnEnterCallback(line, rowData);
+	end
+end
+
+function TableBuilderLibTableMixin:SetLineOnLeaveCallback(callback)
+	self.lineOnLeaveCallback = callback;
+end
+
+function TableBuilderLibTableMixin:OnLeaveListLine(line, rowData)
+	if self.lineOnLeaveCallback then
+		self.lineOnLeaveCallback(line, rowData);
+	end
+end
+
+function TableBuilderLibTableMixin:SetSelectedEntry(rowData)
+	if self.selectionCallback then
+		if not self.selectionCallback(rowData) then
+			return;
+		end
+	end
+
+	self.selectedRowData = rowData;
+	self:DirtyScrollFrame();
+end
+
+function TableBuilderLibTableMixin:GetSelectedEntry()
+	return self.selectedRowData;
+end
+
+
+function TableBuilderLibTableMixin:SetSelectionCallback(selectionCallback)
+	self.selectionCallback = selectionCallback;
+end
+
+function TableBuilderLibTableMixin:SetHighlightCallback(highlightCallback)
+	self.highlightCallback = highlightCallback;
+end
+
+
+
+
+function TableBuilderLibTableMixin:SetSelectedEntryByCondition(condition, scrollTo)
+	if not self.getNumEntries then
+		return;
+	end
+
+	local numEntries = self.getNumEntries();
+	for i = 1, numEntries do
+		local rowData = self.getEntry(i);
+		if condition(rowData) then
+			self:SetSelectedEntry(rowData);
+			self:ScrollToEntryIndex(i);
+			return;
+		end
+	end
+
+	self:SetSelectedEntry(nil);
+	self:RefreshScrollFrame();
+end
+
+
+function TableBuilderLibTableMixin:ScrollToEntryIndex(entryIndex)
+	if not self.isInitialized then
+		return;
+	end
+	self.ScrollBox:ScrollToElementDataIndex(entryIndex, ScrollBoxConstants.AlignCenter);
+end
+
+function TableBuilderLibTableMixin:GetScrollBoxDataIndexBegin()
+	return self.ScrollBox:GetDataIndexBegin();
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
